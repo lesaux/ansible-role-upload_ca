@@ -1,0 +1,38 @@
+---
+- name: Copy CA root.crt
+  copy:
+    dest: "{{ upload_ca_cert_path }}"
+    group: root
+    owner: root
+    content: "{{ ca_root_crt }}"
+  become: true
+  register: cert
+
+- name: Creates elasticsearch certs directory
+  file:
+    path: "{{ upload_ca_cert_application_path }}"
+    state: directory
+    group: "{{ upload_ca_cert_application_user }}"
+    owner: "{{ upload_ca_cert_application_user }}"
+  become: true
+  when:
+    - upload_ca_cert_application_user
+    - upload_ca_cert_application_path
+
+- name: Copy CA root.crt to elastic certs folder
+  copy:
+    dest: "{{ generate_cert_keys_path }}/root.crt"
+    group: "{{ upload_ca_cert_application_user }}"
+    owner: "{{ upload_ca_cert_application_user }}"
+    content: "{{ ca_root_crt }}"
+  become: true
+  register: cert
+  when:
+    - upload_ca_cert_application_user
+    - upload_ca_cert_application_path
+
+
+- name: update trusted ca
+  shell: /bin/update-ca-trust
+  become: true
+  #when: cert.changed
